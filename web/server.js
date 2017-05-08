@@ -2,11 +2,11 @@
 
 const express = require('express');
 const app = express();
-const multer = require('multer');
 const request = require('request');
 const bodyParser = require('body-parser');
+const formidable = require('formidable');
+const fs = require('fs');
 
-const upload = multer({dest: 'uploads/'});
 const port = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
@@ -15,20 +15,34 @@ app.get('/', (req, res) => {
   res.end('receipt recognation fake backend')
 });
 
-app.post('/api/receipt/ocr', upload.single('receipt'), (req, res) => {
+app.post('/api/receipt/ocr', (req, res) => {
 
-    new Promise(resolve => {
+    let form = formidable.IncomingForm({uploadDir: './uploads'});
 
-        request({
-            method: 'POST',
-            uri: 'http://localhost:8080/ocr',
-            json: {
-                "file": req.file
-            }
-        }, (err, response, body) => resolve(body)
-        )
+    form.parse(req, (err, fields, files) => {
 
-    }).then(body => res.json(body) )
+        console.log(err);
+        console.log(fields);
+        console.log(files);
+
+        let path = __dirname + '/' + files.file.path;
+        console.log(fs.existsSync(path));
+        console.log(path);
+
+        new Promise(resolve => {
+
+            request({
+                    method: 'POST',
+                    uri: 'http://localhost:8080/ocr',
+                    json: {
+                        "file": path
+                    }
+                }, (err, response, body) => resolve(body)
+            )
+
+        }).then(body => res.json(body))
+
+    });
 });
 
 app.post('/api/receipt/feedback', (req, res) => {
@@ -104,7 +118,7 @@ app.get('/api/user/list', (req, res) => {
             }
         ]
     });
-})
+});
 
 app.post('/api/user/sync', (req, res) => {
 
@@ -144,7 +158,7 @@ app.post('/api/user/sync', (req, res) => {
             }
         ]
     });
-})
+});
 
 
 app.listen(port,  () => console.log(`Server listening on port ${port}!`) );

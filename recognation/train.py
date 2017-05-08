@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from keras.models import Sequential
-from keras.layers import Dense, LSTM, Bidirectional, Dropout, Embedding, Conv1D, MaxPooling1D, GlobalAveragePooling1D
+from keras.layers import Dense, Dropout, Embedding, Conv1D, MaxPooling1D, GlobalAveragePooling1D
 
 data = pd.read_csv('data/train.tsv', delimiter='\t', header=0)
 categories = {1: 'foods', 2: 'electronics', 3: 'clothes', 4: 'household'}
