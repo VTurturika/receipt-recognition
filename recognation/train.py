@@ -1,36 +1,58 @@
 import pandas as pd
 import numpy as np
 from keras.models import Sequential
-from keras.layers import Dense, LSTM, Bidirectional, Dropout
+from keras.layers import Dense, LSTM, Bidirectional, Dropout, Embedding, Conv1D, MaxPooling1D, GlobalAveragePooling1D
 
 data = pd.read_csv('data/train.tsv', delimiter='\t', header=0)
 categories = {1: 'foods', 2: 'electronics', 3: 'clothes', 4: 'household'}
 
 num_examples = len(data['product'])
 num_categories = len(categories)
+max_example_len = 50
 
-txt = ''
-max_example_len = 0
-for p in data['product']:
-    if len(p) > max_example_len:
-        max_example_len = len(p)
-    txt += p
-chars = set(txt)
+file = open('bi_grams', 'r')
+list = [x.strip('\n') for x in file.readlines()]
 
-print('total chars={}, max_example_len={}'.format(len(chars), max_example_len))
+bigrams_indices = dict((bi, i) for i, bi in enumerate(list))
+indices_bigrams = dict((i, bi) for i, bi in enumerate(list))
 
-char_indices = dict((c, i) for i, c in enumerate(chars))
-indices_char = dict((i, c) for i, c in enumerate(chars))
 
-X = np.ones((num_examples, max_example_len), dtype=np.int64) * -1
+def find_ngrams(input_list, n):
+  return
 
+def encode(str):
+    str = '@'+str+'@'
+    zipped = zip(*[str[i:] for i in range(2)])
+    pairs=[x for x in zipped]
+    result = np.zeros((max_example_len),dtype=np.int64)
+    for i,pair in enumerate(pairs):
+        if i < max_example_len:
+            result[i] = bigrams_indices[pair[0]+pair[1]]
+    return result
+
+# chars = list(available_chars)
+# char_indices = dict((c, i) for i, c in enumerate(chars))
+# indices_char = dict((i, c) for i, c in enumerate(chars))
+#
+# def convert(str):
+#     result = np.zeros(50, dtype=np.int64)
+#     for i, char in enumerate(str):
+#         result[i] = char_indices[char]
+#     return result
+#
+#
+# print('total chars={}, max_example_len={}'.format(len(chars), max_example_len))
+#
+X = []
 for i, product in enumerate(data['product']):
-      for j,char in enumerate(product):
-          X[i,j] = char_indices[char]
+    X.append(encode(product))
+
+X = np.array(X, dtype=np.int64)
+print(X)
 
 Y = np.zeros((num_examples, num_categories), dtype=np.float64)
 
-for i,category in enumerate(data['category']):
+for i, category in enumerate(data['category']):
     Y[i, category-1] = 1
 
 ids = np.arange(num_examples)
@@ -45,25 +67,41 @@ x_test = X[800:]
 y_train = Y[:800]
 y_test = Y[800:]
 
-#input = Input(shape=(max_example_len,), dtype='float32')
-#bi_lstm = Bidirectional(LSTM(128, return_sequences=False, dropout=0.15, recurrent_dropout=0.15, implementation=0))(input)
-
-#output = Dropout(0.3)(bi_lstm)
 
 model = Sequential()
 
-model.add(Dense(128, activation='relu', input_shape=(max_example_len,)))
-model.add(Dropout(0.3))
+# # convnet
+model.add(Embedding(len(list), output_dim=max_example_len))
+model.add(Conv1D(64, 3, activation='relu'))
+model.add(Conv1D(64, 3, activation='relu'))
+model.add(MaxPooling1D(3))
+model.add(Conv1D(128, 3, activation='relu'))
+model.add(Conv1D(128, 3, activation='relu'))
+model.add(GlobalAveragePooling1D())
+model.add(Dropout(0.5))
+
+# model.add(Embedding(len(list), output_dim=256))
+# model.add(LSTM(128))
+# model.add(Dropout(0.5))
+# model.add(Dense(4, activation='sigmoid'))
+
+# model.add(Dense(128, activation='relu', input_shape=(max_example_len,)))
+# model.add(Dropout(0.3))
 model.add(Dense(4, activation='sigmoid'))
 
 model.summary()
 
 model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
-model.fit(x_train, y_train, validation_data=(x_test, y_test), batch_size=1,
-          epochs=5, shuffle=True)
+model.fit(x_train, y_train, validation_data=(x_test, y_test), batch_size=10,
+          epochs=10, shuffle=True)
 
-score = model.evaluate(x_test, y_test, batch_size=1)
 result = model.predict(x_test[10][np.newaxis])
-
 print("\nprediction = {}, y={}".format(result, y_test[10]))
 
+result = model.predict(x_test[100][np.newaxis])
+print("\nprediction = {}, y={}".format(result, y_test[100]))
+
+result = model.predict(x_test[50][np.newaxis])
+print("\nprediction = {}, y={}".format(result, y_test[50]))
+
+model.save('trained_model')
