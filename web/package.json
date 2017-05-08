@@ -1,0 +1,25 @@
+{
+  "name": "web",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VTurturika/receipt-recognation.git"
+  },
+  "author": "Victor Turturika",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/VTurturika/receipt-recognation/issues"
+  },
+  "homepage": "https://github.com/VTurturika/receipt-recognation#readme",
+  "dependencies": {
+    "body-parser": "^1.17.1",
+    "express": "^4.15.2",
+    "multer": "^1.3.0",
+    "request": "^2.81.0"
+  }
+}

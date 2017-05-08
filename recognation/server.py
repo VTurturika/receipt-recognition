@@ -16,7 +16,11 @@ class Ocr(object):
     @cherrypy.tools.json_in()
     @cherrypy.tools.json_out()
     def POST(self):
-        return cherrypy.request.json
+
+        response = cherrypy.request.json
+        response['msg'] = 'from cherrypy.ocr'
+
+        return response
 
 
 @cherrypy.expose
@@ -25,7 +29,11 @@ class Feedback(object):
     @cherrypy.tools.json_in()
     @cherrypy.tools.json_out()
     def POST(self):
-        return cherrypy.request.json
+
+        response = cherrypy.request.json
+        response['msg'] = 'from cherrypy.feedback'
+
+        return response
 
 if __name__ == '__main__':
     conf = {
