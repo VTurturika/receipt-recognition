@@ -16,7 +16,6 @@ def encode(str):
         result[i] = bigrams_indices[pair[0]+pair[1]]
     return result
 
-
 model = load_model('trained_model')
 
 print(model.predict(encode('DVD-центр')[np.newaxis]))

@@ -17,9 +17,6 @@ bigrams_indices = dict((bi, i) for i, bi in enumerate(list))
 indices_bigrams = dict((i, bi) for i, bi in enumerate(list))
 
 
-def find_ngrams(input_list, n):
-  return
-
 def encode(str):
     str = '@'+str+'@'
     zipped = zip(*[str[i:] for i in range(2)])
@@ -30,19 +27,7 @@ def encode(str):
             result[i] = bigrams_indices[pair[0]+pair[1]]
     return result
 
-# chars = list(available_chars)
-# char_indices = dict((c, i) for i, c in enumerate(chars))
-# indices_char = dict((i, c) for i, c in enumerate(chars))
-#
-# def convert(str):
-#     result = np.zeros(50, dtype=np.int64)
-#     for i, char in enumerate(str):
-#         result[i] = char_indices[char]
-#     return result
-#
-#
-# print('total chars={}, max_example_len={}'.format(len(chars), max_example_len))
-#
+
 X = []
 for i, product in enumerate(data['product']):
     X.append(encode(product))
@@ -79,21 +64,14 @@ model.add(Conv1D(128, 3, activation='relu'))
 model.add(Conv1D(128, 3, activation='relu'))
 model.add(GlobalAveragePooling1D())
 model.add(Dropout(0.5))
-
-# model.add(Embedding(len(list), output_dim=256))
-# model.add(LSTM(128))
-# model.add(Dropout(0.5))
-# model.add(Dense(4, activation='sigmoid'))
-
-# model.add(Dense(128, activation='relu', input_shape=(max_example_len,)))
-# model.add(Dropout(0.3))
+model.add(Dense(32))
 model.add(Dense(4, activation='sigmoid'))
 
 model.summary()
 
-model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
-model.fit(x_train, y_train, validation_data=(x_test, y_test), batch_size=10,
-          epochs=10, shuffle=True)
+model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+model.fit(x_train, y_train, validation_data=(x_test, y_test), batch_size=1,
+          epochs=20, shuffle=True)
 
 result = model.predict(x_test[10][np.newaxis])
 print("\nprediction = {}, y={}".format(result, y_test[10]))
