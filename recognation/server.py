@@ -12,16 +12,15 @@ class Root(object):
 @cherrypy.expose
 class Ocr(object):
 
-    def __init__(self, handler):
-        self.handler = handler
 
     @cherrypy.tools.json_in()
     @cherrypy.tools.json_out()
     def POST(self):
 
+        handler = OcrHandler()
         response = cherrypy.request.json
-        lines = self.handler.make_ocr(response['file'])
-        response['parsed_products'] = self.handler.parse(lines)
+        lines = handler.make_ocr(response['file'])
+        response['parsed_products'] = handler.parse(lines)
 
         return response
 
@@ -45,9 +44,8 @@ if __name__ == '__main__':
         }
     }
 
-
     root = Root()
-    root.ocr = Ocr( OcrHandler() )
+    root.ocr = Ocr()
     root.feedback = Feedback()
 
     cherrypy.quickstart(root, '/', conf)

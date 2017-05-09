@@ -17,9 +17,9 @@ bigrams_indices = dict((bi, i) for i, bi in enumerate(list))
 indices_bigrams = dict((i, bi) for i, bi in enumerate(list))
 
 
-def encode(str):
-    str = '@'+str+'@'
-    zipped = zip(*[str[i:] for i in range(2)])
+def encode(string):
+    string = '@' + str(string) + '@'
+    zipped = zip(*[string[i:] for i in range(2)])
     pairs=[x for x in zipped]
     result = np.zeros((max_example_len),dtype=np.int64)
     for i,pair in enumerate(pairs):
@@ -55,7 +55,6 @@ y_test = Y[800:]
 
 model = Sequential()
 
-# # convnet
 model.add(Embedding(len(list), output_dim=max_example_len))
 model.add(Conv1D(64, 3, activation='relu'))
 model.add(Conv1D(64, 3, activation='relu'))

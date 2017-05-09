@@ -1,9 +1,11 @@
+import random
+
 import numpy as np
-import re
-from keras.models import load_model
 import pyocr
+import re
 from pyocr.builders import TextBuilder
 from PIL import Image
+from keras.models import load_model
 
 class OcrHandler:
 
@@ -11,16 +13,17 @@ class OcrHandler:
         file = open('bi_grams', 'r')
         list = [x.strip('\n') for x in file.readlines()]
         self.bigrams = dict((bi, i) for i, bi in enumerate(list))
-        self.model = load_model('trained_model')
         self.ocr = pyocr.get_available_tools()[0]
+        self.categories = {1: 'foods', 2: 'electronics', 3: 'clothes', 4: 'household', 5: 'others'}
 
     def encode(self, str):
-        str = '@' + str + '@'
+        str = '@' + OcrHandler.remove_invalid_chars(str) + '@'
         zipped = zip(*[str[i:] for i in range(2)])
         pairs = [x for x in zipped]
         result = np.zeros((50), dtype=np.int64)
         for i, pair in enumerate(pairs):
-            result[i] = self.bigrams[pair[0] + pair[1]]
+            if i < len(pairs):
+                result[i] = self.bigrams[pair[0] + pair[1]]
         return result
 
     def make_ocr(self, image):
@@ -30,13 +33,11 @@ class OcrHandler:
             lang='ukr',
             builder=TextBuilder()
         )
-
         return receipt
 
     def parse(self, receipt):
 
         lines = receipt.split('\n')
-
         non_null_lines = []
         for line in lines:
             if len(line) > 1:
@@ -127,8 +128,29 @@ class OcrHandler:
 
                     parsed_products.append(product)
 
+            parsed_products = [x for x in parsed_products if len(x['name']) > 0]
+            for product in parsed_products:
+                product['category'] = self.make_prediction(product['name'])
+
         return parsed_products
+
+    def make_prediction(self, product):
+        try:
+            encoded_product = self.encode(product)
+            model = load_model('trained_model')
+            prediction = model.predict(encoded_product[np.newaxis])
+            if max(prediction[0]) > 0.3:
+                return self.categories[ np.argmax(prediction[0]) + 1 ]
+            else:
+                return self.categories[5]
+        except:
+            print('error catched')
+            return self.categories[random.randint(1, 5)]
+
 
     @staticmethod
     def remove_invalid_chars(string):
-        return ''.join([c for c in string if c not in set('\'«.-*:%[]!?”“')]).replace('=', ' ')
+        return ''.join([c for c in string if c not in set('\'«.-*:%[]!?/”“')]).replace('=', ' ')
+
+    def remove_non_bigrams_chars(self, string):
+        return ''.join([c for c in string if c not in set(self.bigrams.values())])
