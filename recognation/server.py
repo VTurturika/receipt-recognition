@@ -6,7 +6,6 @@ class Root(object):
 
     @cherrypy.tools.json_out()
     def GET(self):
-
         return {'msg': 'it\'s working'}
 
 
@@ -20,13 +19,11 @@ class Ocr(object):
     @cherrypy.tools.json_out()
     def POST(self):
 
-        request_body = cherrypy.request.json
-        request_body['msg'] = 'from cherrypy.ocr'
-        request_body['ocr'] = self.handler.make_ocr(request_body['file'])
+        response = cherrypy.request.json
+        lines = self.handler.make_ocr(response['file'])
+        response['parsed_products'] = self.handler.parse(lines)
 
-        print(request_body)
-
-        return request_body
+        return response
 
 
 @cherrypy.expose

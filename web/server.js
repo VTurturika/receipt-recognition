@@ -25,6 +25,8 @@ app.post('/api/receipt/ocr', (req, res) => {
         console.log(fields);
         console.log(files);
 
+        if(!files.file || !files.file.path) return res.end('upload failed');
+
         let path = __dirname + '/' + files.file.path;
         console.log(fs.existsSync(path));
         console.log(path);
