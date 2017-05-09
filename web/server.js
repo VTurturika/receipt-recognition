@@ -6,6 +6,7 @@ const request = require('request');
 const bodyParser = require('body-parser');
 const formidable = require('formidable');
 const fs = require('fs');
+const db = require('./database')
 
 const port = process.env.PORT || 3000;
 
@@ -82,9 +83,17 @@ app.post('/api/user/new', (req, res) => {
     console.log('POST /api/user/new');
     console.log('\tbody: ', req.body);
 
-    res.json({
-        "userToken": "123456789"
-    });
+    if(!req.body.login || !req.body.password) {
+        res.status(400)
+        res.json({
+            "code": 400,
+            "error": "badRequest"
+        })
+    }
+
+    db.addUser(req.body)
+        .then(result => res.json(result))
+        .catch(err => res.json(err))
 });
 
 
@@ -93,9 +102,17 @@ app.post('/api/user/login', (req, res) => {
     console.log('POST /api/user/login');
     console.log('\tbody: ', req.body);
 
-    res.json({
-        "userToken": "123456789"
-    });
+    if(!req.body.login || !req.body.password) {
+        res.status(400)
+        res.json({
+            "code": 400,
+            "error": "badRequest"
+        })
+    }
+
+    db.login(req.body)
+        .then(result => res.json(result))
+        .catch(err => res.json(err))
 });
 
 app.get('/api/user/list', (req, res) => {
