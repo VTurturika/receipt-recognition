@@ -20,9 +20,9 @@ class Ocr(object):
         handler = OcrHandler()
         response = cherrypy.request.json
         lines = handler.make_ocr(response['file'])
-        response['parsed_products'] = handler.parse(lines)
+        items = handler.parse(lines)
 
-        return response
+        return handler.prepare_response(items)
 
 
 @cherrypy.expose

@@ -19,15 +19,31 @@ app.post('/api/receipt/ocr', (req, res) => {
 
     let form = formidable.IncomingForm({uploadDir: './uploads'});
 
+    if( !req.param('userToken') ) {
+        res.status(400);
+        return res.json({
+            code: 400,
+            error: 'badRequest',
+            case: 'user token'
+        })
+    }
+
     form.parse(req, (err, fields, files) => {
 
         console.log(err);
         console.log(fields);
         console.log(files);
 
-        if(!files.file || !files.file.path) return res.end('upload failed');
+        if(!files.receipt || !files.receipt.path) {
+            res.status(400);
+            return res.json({
+                code: 400,
+                error: 'badRequest',
+                case: 'receipt field'
+            })
+        }
 
-        let path = __dirname + '/' + files.file.path;
+        let path = __dirname + '/' + files.receipt.path;
         console.log(fs.existsSync(path));
         console.log(path);
 

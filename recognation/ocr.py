@@ -3,6 +3,8 @@ import random
 import numpy as np
 import pyocr
 import re
+
+from datetime import date, datetime
 from pyocr.builders import TextBuilder
 from PIL import Image
 from keras.models import load_model
@@ -82,26 +84,26 @@ class OcrHandler:
 
                 product = dict()
                 if has_measure_price:
-                    product['measure'] = has_measure_price.group('measure')
-                    product['price'] = has_measure_price.group('price')
+                    product['measure'] = float(has_measure_price.group('measure').replace(',', '.'))
+                    product['measure_price'] = float(has_measure_price.group('price').replace(',', '.'))
                     product_name = re.sub('^\d+', '', product_lines[i+1].strip())
                     product['name'] = product_name
 
                     has_product_price = product_price.match(product_lines[i+1].strip())
 
                     if has_product_price:
-                        product['product_price'] = has_product_price.group('total')
+                        product['price'] = float(has_product_price.group('total').replace(',', '.'))
                         skip_iterations = [i+1]
                     else:
                         has_product_price = product_price.match(product_lines[i+2].strip())
                         if has_product_price:
-                            product['product_price'] = has_product_price.group('total')
+                            product['price'] = float(has_product_price.group('total').replace(',', '.'))
                             product['name'] += \
                                 re.sub('\S+\s+(?P<total>\d+((,|\.)\d+)?)\s*(А|д)$', '',
                                        product_lines[i+2].strip())
                             skip_iterations = [i+1, i+2]
                         else:
-                            product['product_price'] = None
+                            product['price'] = None
                             skip_iterations = [i+1, i+2]
 
                     parsed_products.append(product)
@@ -112,24 +114,25 @@ class OcrHandler:
 
                     has_product_price = product_price.match(line.strip())
                     if has_product_price:
-                        product['product_price'] = has_product_price.group('total')
+                        product['price'] = float(has_product_price.group('total').replace(',', '.'))
                         skip_iterations = []
                     elif i+1 < len(product_lines):
                         has_product_price = product_price.match(product_lines[i+1].strip())
                         if has_product_price:
-                            product['product_price'] = has_product_price.group('total')
+                            product['price'] = float(has_product_price.group('total').replace(',', '.'))
                             product['name'] += \
                                 re.sub('\S+\s+(?P<total>\d+((,|\.)\d+)?)\s*(А|д)$', '',
                                         product_lines[i + 1].strip())
                             skip_iterations = [i+1]
                         else:
-                            product['product_price'] = None
+                            product['price'] = None
                             skip_iterations = [i+1]
 
                     parsed_products.append(product)
 
             parsed_products = [x for x in parsed_products if len(x['name']) > 0]
-            for product in parsed_products:
+            for i, product in enumerate(parsed_products):
+                product['number'] = i+1
                 product['category'] = self.make_prediction(product['name'])
 
         return parsed_products
@@ -147,6 +150,21 @@ class OcrHandler:
             print('error catched')
             return self.categories[random.randint(1, 5)]
 
+    def prepare_response(self, items):
+
+        response = dict({
+            'feedbackToken': '',
+            'date': str(date.today()),
+            'time':  str(datetime.now())[12:16],
+            'total': sum([float(x['price']) for x in items if 'price' in x.keys() and x['price']]),
+            'currency': 'UAH'
+        })
+
+        count_category = {items.count(x): x['category'] for x in items}
+        response['commonCategory'] = count_category[max(count_category.keys())] \
+            if len(items) > 0 else None
+        response['items'] = items
+        return response
 
     @staticmethod
     def remove_invalid_chars(string):
