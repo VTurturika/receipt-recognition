@@ -6,11 +6,13 @@ const request = require('request');
 const bodyParser = require('body-parser');
 const formidable = require('formidable');
 const fs = require('fs');
+const cors = require('cors')
 const db = require('./database')
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 80;
 
 app.use(bodyParser.json());
+app.use(cors())
 
 app.get('/', (req, res) => {
   res.end('receipt recognation fake backend')
