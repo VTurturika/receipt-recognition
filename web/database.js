@@ -120,5 +120,71 @@ module.exports = {
                 ));
             })
             .catch(err => reject(err));
+    }),
+
+    syncReceipts: (params, userToken) => new Promise((resolve, reject) => {
+
+        db.collection('users')
+            .findOne({
+                '_id': ObjectID(userToken)
+            })
+            .then(user => {
+
+                if(!params || !params.receipts || !Array.isArray(params.receipts)) {
+
+                    resolve({
+                        code: 400,
+                        error: 'badRequest',
+                        case: 'receipts field are required'
+                    });
+                }
+
+                let dbReceipts = {};
+                let userReceipts = {};
+                user.receipts.forEach(receipt => dbReceipts[receipt.feedbackToken] = receipt);
+                params.receipts.forEach(receipt => userReceipts[receipt.feedbackToken] = receipt);
+
+                let addToDb = [];
+                Object.keys(userReceipts).forEach(token => {
+
+                    if(!dbReceipts[token]) {
+                        let receipt = userReceipts[token]['feedbackToken'];
+                        receipt['feedbackToken'] = ObjectID(receipt['feedbackToken']);
+                        addToDb.push(receipt);
+                    }
+                });
+
+                let sendToUser = [];
+                Object.keys(dbReceipts).forEach(token => {
+
+                    if(!userReceipts[token]) sendToUser.push(dbReceipts[token]);
+                });
+
+                if(addToDb.length > 0) {
+                    db.collection('users')
+                        .findOneAndUpdate({
+                            '_id': ObjectID(userToken)
+                        }, {
+                        $push: {receipts: {$each: addToDb}}
+                    })
+                    .then(() => {
+
+                        resolve({
+                        receipts:  sendToUser.length > 0
+                            ? params.receipts.concat(sendToUser)
+                            : params.receipts
+                        })
+                    })
+                }
+                else {
+
+                    resolve({
+                        receipts:  sendToUser.length > 0
+                            ? params.receipts.concat(sendToUser)
+                            : params.receipts
+                    })
+                }
+            })
+            .catch(err => reject(err));
     })
 };

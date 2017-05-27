@@ -21,7 +21,6 @@ app.get('/', (req, res) => {
 
 app.post('/api/receipt/ocr', (req, res) => {
 
-    //todo add check if userToken exists in db
     if( !req.query['userToken'] ) {
         res.status(400);
         return res.json({
@@ -177,41 +176,32 @@ app.get('/api/user/list', (req, res) => {
 app.post('/api/user/sync', (req, res) => {
 
     console.log('POST /api/user/sync');
-    res.json({
-        "receipts": [
-            {
-                "date": "2017-04-23",
-                "time": "15:30",
-                "total": 123.50,
-                "currency": "UAH",
-                "commonCategory": "food",
-                "items":[
-                    {
-                        "number": 1,
-                        "name": "Яблуко Зелене",
-                        "price": 12.30,
-                        "category": "food",
-                        "measure": "кг",
-                        "value": 0.73,
-                    },{
-                        "number": 2,
-                        "name": "Яблуко Червоне",
-                        "price": 15.30,
-                        "category": "food",
-                        "measure": "кг",
-                        "value": 0.5,
-                    },{
-                        "number": 3,
-                        "name": "Батарейки",
-                        "price": 5.40,
-                        "category": "electronics",
-                        "measure": "шт",
-                        "value": 2,
-                    }
-                ]
+
+    if( !req.query['userToken'] ) {
+        res.status(400);
+        return res.json({
+            code: 400,
+            error: 'badRequest',
+            case: 'user token'
+        });
+    }
+
+    db.checkToken(req.query['userToken'])
+        .then(isExist => {
+
+            if (!isExist) {
+                res.status(401);
+                res.json({
+                    code: 401,
+                    error: 'notExist',
+                    case: 'wrong user token'
+                });
             }
-        ]
-    });
+            else db.syncReceipts(req.body, req.query['userToken'])
+                .then(receipts => res.json(receipts))
+                .catch(err => res.json(err));
+        });
+
 });
 
 
