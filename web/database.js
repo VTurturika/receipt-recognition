@@ -1,17 +1,17 @@
 'use strict';
 
 const mongodb = require('mongodb').MongoClient;
-const url = 'mongodb://localhost:27017/diploma'
-
+const ObjectID = require('mongodb').ObjectID;
+const url = 'mongodb://localhost:27017/diploma';
 
 module.exports = {
 
     addUser: (params) => new Promise( (resolve, reject) => {
 
         let db;
-
+        let userToken;
         mongodb.connect(url)
-            .then( DB => {
+            .then(DB => {
 
                 db = DB;
                 console.log('Connected to db');
@@ -19,7 +19,7 @@ module.exports = {
                 return db.collection('users')
                     .findOne({login: params.login});
             })
-            .then( user => {
+            .then(user => {
 
                 if(!user) return db.collection('users')
                     .insertOne({
@@ -28,13 +28,17 @@ module.exports = {
                         receipts: []
                     });
 
-                else resolve({
-                    "code": 403,
-                    "error": "alreadyExist"
-                })
+                else db.close().then(() => resolve({
+                        "code": 403,
+                        "error": "alreadyExist"
+                    }));
             })
-            .then( result => resolve({
-                "userToken": result.insertedId
+            .then(result => {
+                userToken = result.insertedId;
+                return db.close();
+            })
+            .then(() => resolve({
+                "userToken": userToken
             }))
             .catch(err => reject(err))
     }),
@@ -42,8 +46,9 @@ module.exports = {
     login: (params) => new Promise( (resolve, reject) => {
 
         let db;
+        let userToken;
         mongodb.connect(url)
-            .then( DB => {
+            .then(DB => {
 
                 db = DB;
                 console.log('Connected to db');
@@ -56,13 +61,64 @@ module.exports = {
             })
             .then(user => {
 
-                if(user) resolve({
-                    "userToken": user._id
-                });
-                else resolve({
+                if(user) {
+                    userToken = user._id;
+                    return db.close();
+                }
+                else db.close().then(() => resolve({
                    "code": 401,
                    "error": "notExist"
-                })
+                }));
+            })
+            .then(() => resolve({
+                "userToken": userToken
+            }))
+            .catch(err => reject(err))
+    }),
+
+    saveReceipt: (receipt, userToken) => new Promise((resolve, reject) => {
+
+        let db;
+        mongodb.connect(url)
+            .then(DB => {
+
+                db = DB;
+                console.log('Connected to db');
+
+                receipt.feedbackToken = ObjectID();
+                return db.collection('users')
+                    .findOneAndUpdate({
+                        '_id': ObjectID(userToken)
+                    }, {
+                        $push: {receipts: receipt}
+                    });
+            })
+            .then(user => {
+
+                console.log(user);
+                resolve(receipt);
+            })
+            .catch(err => reject(err))
+    }),
+
+    getReceipts: (params, userToken) => new Promise((resolve, reject) => {
+
+        let db;
+        mongodb.connect(url)
+            .then(DB => {
+
+                db = DB;
+                console.log('Connected to db');
+
+                return db.collection('users')
+                    .findOne({
+                        '_id': ObjectID(userToken)
+                    });
+            })
+            .then(user => {
+
+                console.log(user);
+                resolve(user.receipts);
             })
             .catch(err => reject(err))
     })

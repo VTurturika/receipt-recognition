@@ -6,22 +6,24 @@ const request = require('request');
 const bodyParser = require('body-parser');
 const formidable = require('formidable');
 const fs = require('fs');
-const cors = require('cors')
-const db = require('./database')
+const cors = require('cors');
+const db = require('./database');
 
 const port = process.env.PORT || 80;
 
 app.use(bodyParser.json());
-app.use(cors())
+app.use(cors());
 
 app.get('/', (req, res) => {
-  res.end('receipt recognation fake backend')
+  res.end('receipt recognition backend worked')
 });
 
 app.post('/api/receipt/ocr', (req, res) => {
 
+    //todo change image receiving
     let form = formidable.IncomingForm({uploadDir: './uploads'});
 
+    //todo add check if userToken exists in db
     if( !req.param('userToken') ) {
         res.status(400);
         return res.json({
@@ -61,8 +63,9 @@ app.post('/api/receipt/ocr', (req, res) => {
                 }, (err, response, body) => resolve(body)
             )
 
-        }).then(body => res.json(body))
-
+        }).then(receipt => db.saveReceipt(receipt,req.param('userToken')))
+          .then(receipt => res.json(receipt))
+          .catch(err => res.json(err))
     });
 });
 
@@ -86,16 +89,19 @@ app.post('/api/user/new', (req, res) => {
     console.log('\tbody: ', req.body);
 
     if(!req.body.login || !req.body.password) {
-        res.status(400)
-        res.json({
+        res.status(400);
+        return res.json({
             "code": 400,
             "error": "badRequest"
-        })
+        });
     }
 
     db.addUser(req.body)
-        .then(result => res.json(result))
-        .catch(err => res.json(err))
+        .then(result => {
+            res.status( result.code ? result.code : 200);
+            res.json(result);
+        })
+        .catch(err => res.json(err));
 });
 
 
@@ -105,56 +111,38 @@ app.post('/api/user/login', (req, res) => {
     console.log('\tbody: ', req.body);
 
     if(!req.body.login || !req.body.password) {
-        res.status(400)
-        res.json({
+        res.status(400);
+        return res.json({
             "code": 400,
             "error": "badRequest"
-        })
+        });
     }
 
     db.login(req.body)
-        .then(result => res.json(result))
-        .catch(err => res.json(err))
+        .then(result => {
+            res.status( result.code ? result.code : 200);
+            res.json(result);
+        })
+        .catch(err => res.json(err));
 });
 
 app.get('/api/user/list', (req, res) => {
 
     console.log('GET /api/user/list');
-    res.json({
-        "receipts": [
-            {
-                "date": "2017-04-23",
-                "time": "15:30",
-                "total": 123.50,
-                "currency": "UAH",
-                "commonCategory": "food",
-                "items":[
-                    {
-                        "number": 1,
-                        "name": "Яблуко Зелене",
-                        "price": 12.30,
-                        "category": "food",
-                        "measure": "кг",
-                        "value": 0.73,
-                    },{
-                        "number": 2,
-                        "name": "Яблуко Червоне",
-                        "price": 15.30,
-                        "category": "food",
-                        "measure": "кг",
-                        "value": 0.5,
-                    },{
-                        "number": 3,
-                        "name": "Батарейки",
-                        "price": 5.40,
-                        "category": "electronics",
-                        "measure": "шт",
-                        "value": 2,
-                    }
-                ]
-            }
-        ]
-    });
+
+    if( !req.param('userToken') ) {
+        res.status(400);
+        return res.json({
+            code: 400,
+            error: 'badRequest',
+            case: 'user token'
+        });
+    }
+
+    db.getReceipts({}, req.param('userToken'))
+        .then(receipts => res.json({receipts : receipts}))
+        .catch(err => res.json(err));
+
 });
 
 app.post('/api/user/sync', (req, res) => {
