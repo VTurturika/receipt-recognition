@@ -78,6 +78,8 @@ module.exports = {
 
     checkToken: (token) => new Promise((resolve, reject) => {
 
+        if(token && token.length !== 24) resolve(false);
+
         db.collection('users')
             .findOne({
                 '_id': ObjectID(token)

@@ -22,48 +22,82 @@ app.get('/', (req, res) => {
 app.post('/api/receipt/ocr', (req, res) => {
 
     //todo add check if userToken exists in db
-    if( !req.param('userToken') ) {
+    if( !req.query['userToken'] ) {
         res.status(400);
         return res.json({
             code: 400,
             error: 'badRequest',
-            case: 'user token'
+            case: 'user token is required'
         })
     }
 
-    //todo change image receiving
-    let form = formidable.IncomingForm({uploadDir: './uploads'});
+    db.checkToken(req.query['userToken'])
+        .then(isExist => {
 
-    form.parse(req, (err, fields, files) => {
+            if(!isExist) {
+                res.status(400);
+                return res.json({
+                    code: 400,
+                    error: 'badRequest',
+                    case: 'wrong user token'
+                });
+            }
 
-        console.log(err);
-        console.log(fields);
-        console.log(files);
+            //todo change image receiving
+            let form = formidable.IncomingForm({uploadDir: './uploads'});
 
-        if(!files.receipt || !files.receipt.path) {
-            res.status(400);
-            return res.json({
-                code: 400,
-                error: 'badRequest',
-                case: 'receipt field'
-            })
-        }
+            form.parse(req, (err, fields, files) => {
 
-        let path = __dirname + '/' + files.receipt.path;
-        console.log(fs.existsSync(path));
-        console.log(path);
+                console.log(err);
+                console.log(fields);
+                console.log(files);
 
-        recognition.ocr(path)
-            .then(receipt => db.saveReceipt(receipt, req.param('userToken')))
-            .then(receipt => res.json(receipt))
-            .catch(err => res.json(err));
-    });
+                if (!files.receipt || !files.receipt.path) {
+                    res.status(400);
+                    return res.json({
+                        code: 400,
+                        error: 'badRequest',
+                        case: 'receipt field'
+                    });
+                }
+
+                let path = __dirname + '/' + files.receipt.path;
+                console.log(fs.existsSync(path));
+                console.log(path);
+
+                recognition.ocr(path)
+                    .then(receipt => db.saveReceipt(receipt, req.query['userToken']))
+                    .then(receipt => res.json(receipt))
+                    .catch(err => res.json(err));
+            });
+
+        });
 });
 
 app.post('/api/receipt/feedback', (req, res) => {
 
-   recognition.feedback(req.body)
-       .then(body => res.json(body))
+    if( !req.query['userToken'] ) {
+        res.status(400);
+        return res.json({
+            code: 400,
+            error: 'badRequest',
+            case: 'user token is required'
+        })
+    }
+
+    db.checkToken(req.query['userToken'])
+        .then(isExist => {
+
+            if(!isExist) {
+                res.status(400);
+                res.json({
+                    code: 400,
+                    error: 'badRequest',
+                    case: 'wrong user token'
+                });
+            }
+            else recognition.feedback(req.body).then(body => res.json(body))
+        });
 });
 
 app.post('/api/user/new', (req, res) => {
@@ -113,7 +147,7 @@ app.get('/api/user/list', (req, res) => {
 
     console.log('GET /api/user/list');
 
-    if( !req.param('userToken') ) {
+    if( !req.query['userToken'] ) {
         res.status(400);
         return res.json({
             code: 400,
@@ -122,9 +156,21 @@ app.get('/api/user/list', (req, res) => {
         });
     }
 
-    db.getReceipts({}, req.param('userToken'))
-        .then(receipts => res.json({receipts : receipts}))
-        .catch(err => res.json(err));
+    db.checkToken(req.query['userToken'])
+        .then(isExist => {
+
+            if (!isExist) {
+                res.status(400);
+                res.json({
+                    code: 400,
+                    error: 'badRequest',
+                    case: 'wrong user token'
+                });
+            }
+            else db.getReceipts({}, req.query['userToken'])
+                .then(receipts => res.json({receipts: receipts}))
+                .catch(err => res.json(err));
+        });
 
 });
 
