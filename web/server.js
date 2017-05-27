@@ -8,6 +8,7 @@ const formidable = require('formidable');
 const fs = require('fs');
 const cors = require('cors');
 const db = require('./database');
+const recognition = require('./recognition');
 
 const port = process.env.PORT || 80;
 
@@ -20,9 +21,6 @@ app.get('/', (req, res) => {
 
 app.post('/api/receipt/ocr', (req, res) => {
 
-    //todo change image receiving
-    let form = formidable.IncomingForm({uploadDir: './uploads'});
-
     //todo add check if userToken exists in db
     if( !req.param('userToken') ) {
         res.status(400);
@@ -32,6 +30,9 @@ app.post('/api/receipt/ocr', (req, res) => {
             case: 'user token'
         })
     }
+
+    //todo change image receiving
+    let form = formidable.IncomingForm({uploadDir: './uploads'});
 
     form.parse(req, (err, fields, files) => {
 
@@ -52,35 +53,17 @@ app.post('/api/receipt/ocr', (req, res) => {
         console.log(fs.existsSync(path));
         console.log(path);
 
-        new Promise(resolve => {
-
-            request({
-                    method: 'POST',
-                    uri: 'http://localhost:8080/ocr',
-                    json: {
-                        "file": path
-                    }
-                }, (err, response, body) => resolve(body)
-            )
-
-        }).then(receipt => db.saveReceipt(receipt,req.param('userToken')))
-          .then(receipt => res.json(receipt))
-          .catch(err => res.json(err))
+        recognition.ocr(path)
+            .then(receipt => db.saveReceipt(receipt, req.param('userToken')))
+            .then(receipt => res.json(receipt))
+            .catch(err => res.json(err));
     });
 });
 
 app.post('/api/receipt/feedback', (req, res) => {
 
-    new Promise(resolve => {
-
-        request({
-            method: 'POST',
-            uri: 'http://localhost:8080/feedback',
-            json: req.body
-        }, (err, response, body) => resolve(body)
-        )
-
-    }).then(body => res.json(body) )
+   recognition.feedback(req.body)
+       .then(body => res.json(body))
 });
 
 app.post('/api/user/new', (req, res) => {
