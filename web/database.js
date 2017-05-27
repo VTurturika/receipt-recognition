@@ -96,8 +96,28 @@ module.exports = {
             })
             .then(user => {
 
-                console.log(user);
-                resolve(user.receipts);
+                params['dateFrom'] = params['dateFrom']
+                    ? new Date(params['dateFrom'])
+                    : new Date('1900-01-01');
+                params['dateTo'] = params['dateTo']
+                    ? new Date(params['dateTo'])
+                    : new Date('2100-01-01');
+                params['minTotal'] = params['minTotal']
+                    ? Number.parseFloat(params['minTotal'])
+                    : -Infinity;
+                params['maxTotal'] = params['maxTotal']
+                    ? Number.parseFloat(params['maxTotal'])
+                    : Infinity;
+
+                resolve(user.receipts.filter(receipt =>
+
+                    params['dateFrom'] <= new Date(receipt.date) &&
+                    params['dateTo'] >= new Date(receipt.date) &&
+                    params['minTotal'] <= receipt.total &&
+                    params['maxTotal'] >= receipt.total &&
+                    (params['currency'] ? receipt.currency === params['currency']: true) &&
+                    (params['category'] ? receipt.commonCategory === params['category']: true)
+                ));
             })
             .catch(err => reject(err));
     })

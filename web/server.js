@@ -35,10 +35,10 @@ app.post('/api/receipt/ocr', (req, res) => {
         .then(isExist => {
 
             if(!isExist) {
-                res.status(400);
+                res.status(401);
                 return res.json({
-                    code: 400,
-                    error: 'badRequest',
+                    code: 401,
+                    error: 'notExist',
                     case: 'wrong user token'
                 });
             }
@@ -89,10 +89,10 @@ app.post('/api/receipt/feedback', (req, res) => {
         .then(isExist => {
 
             if(!isExist) {
-                res.status(400);
+                res.status(401);
                 res.json({
-                    code: 400,
-                    error: 'badRequest',
+                    code: 401,
+                    error: 'notExist',
                     case: 'wrong user token'
                 });
             }
@@ -160,14 +160,14 @@ app.get('/api/user/list', (req, res) => {
         .then(isExist => {
 
             if (!isExist) {
-                res.status(400);
+                res.status(401);
                 res.json({
-                    code: 400,
-                    error: 'badRequest',
+                    code: 401,
+                    error: 'notExist',
                     case: 'wrong user token'
                 });
             }
-            else db.getReceipts({}, req.query['userToken'])
+            else db.getReceipts(req.query, req.query['userToken'])
                 .then(receipts => res.json({receipts: receipts}))
                 .catch(err => res.json(err));
         });
