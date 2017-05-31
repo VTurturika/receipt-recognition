@@ -5,10 +5,15 @@ const ObjectID = require('mongodb').ObjectID;
 const url = 'mongodb://localhost:27017/diploma';
 let db;
 
-mongodb.connect(url).then(DB => {
-    db = DB;
-    console.log('Connected to db');
-});
+mongodb.connect(url)
+    .then(DB => {
+        db = DB;
+        console.log('Connected to db');
+    })
+    .catch(err => {
+        console.log(err.message);
+        process.exit(1);
+    });
 
 module.exports = {
 
@@ -27,7 +32,7 @@ module.exports = {
                         receipts: []
                     });
 
-                else resolve({
+                else reject({
                         "code": 403,
                         "error": "alreadyExist"
                     });
@@ -35,7 +40,12 @@ module.exports = {
             .then(result => resolve({
                 "userToken": result.insertedId
             }))
-            .catch(err => reject(err));
+            .catch(err => reject({
+                code: 500,
+                err: 'serverError',
+                case: 'db error',
+                message: err.message
+            }));
     }),
 
     login: (params) => new Promise((resolve, reject) => {
@@ -70,22 +80,59 @@ module.exports = {
                 $push: {receipts: receipt}
             })
             .then(user => {
+
+                if(!user)
+                    reject({
+                        code: 401,
+                        err: 'unauthorized',
+                        case: 'user not found'
+                    });
                 console.log(JSON.stringify(user));
                 resolve(receipt);
             })
-            .catch(err => reject(err));
+            .catch(err => reject({
+                code: 500,
+                err: 'serverError',
+                case: 'db error',
+                message: err.message
+            }));
     }),
 
     checkToken: (token) => new Promise((resolve, reject) => {
 
-        if(token && token.length !== 24) resolve(false);
+        if(!ObjectID.isValid(token)) {
+            console.log('invalid token');
+            return reject({
+                code: 400,
+                err: 'badRequest',
+                case: 'invalid token'
+            });
+        }
 
         db.collection('users')
             .findOne({
                 '_id': ObjectID(token)
             })
-            .then(user => resolve(user !== null))
-            .catch(err => reject(err));
+            .then(user => {
+                if(user)
+                    resolve(true);
+                else {
+                    console.log('user not found');
+                    reject({
+                        code: 401,
+                        err: 'unauthorized',
+                        case: 'user not found'
+                    })
+                }
+            })
+            .catch(err => {
+                reject({
+                    code: 500,
+                    err: 'serverError',
+                    case: 'db error',
+                    message: err.message
+                })
+            });
     }),
 
     getReceipts: (params, userToken) => new Promise((resolve, reject) => {
@@ -96,18 +143,36 @@ module.exports = {
             })
             .then(user => {
 
-                params['dateFrom'] = params['dateFrom']
-                    ? new Date(params['dateFrom'])
-                    : new Date('1900-01-01');
-                params['dateTo'] = params['dateTo']
-                    ? new Date(params['dateTo'])
-                    : new Date('2100-01-01');
-                params['minTotal'] = params['minTotal']
-                    ? Number.parseFloat(params['minTotal'])
-                    : -Infinity;
-                params['maxTotal'] = params['maxTotal']
-                    ? Number.parseFloat(params['maxTotal'])
-                    : Infinity;
+                if(!user) {
+                    return reject({
+                        code: 401,
+                        err: 'unauthorized',
+                        case: 'user not found'
+                    })
+                }
+
+                try {
+                    params['dateFrom'] = params['dateFrom']
+                        ? new Date(params['dateFrom'])
+                        : new Date('1900-01-01');
+                    params['dateTo'] = params['dateTo']
+                        ? new Date(params['dateTo'])
+                        : new Date('2100-01-01');
+                    params['minTotal'] = params['minTotal']
+                        ? Number.parseFloat(params['minTotal'])
+                        : -Infinity;
+                    params['maxTotal'] = params['maxTotal']
+                        ? Number.parseFloat(params['maxTotal'])
+                        : Infinity;
+                }
+                catch (err) {
+                    return reject({
+                        code: 400,
+                        err: 'badRequest',
+                        case: 'invalid params',
+                        message: err.message
+                    })
+                }
 
                 resolve(user.receipts.filter(receipt =>
 
@@ -119,7 +184,14 @@ module.exports = {
                     (params['category'] ? receipt.commonCategory === params['category']: true)
                 ));
             })
-            .catch(err => reject(err));
+            .catch(err => {
+                reject({
+                    code: 500,
+                    err: 'serverError',
+                    case: 'db error',
+                    message: err.message
+                })
+            });
     }),
 
     syncReceipts: (params, userToken) => new Promise((resolve, reject) => {
@@ -132,7 +204,7 @@ module.exports = {
 
                 if(!params || !params.receipts || !Array.isArray(params.receipts)) {
 
-                    resolve({
+                    return reject({
                         code: 400,
                         error: 'badRequest',
                         case: 'receipts field are required'
