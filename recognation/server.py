@@ -1,5 +1,6 @@
 import cherrypy
 from ocr import OcrHandler
+from cherrypy.process.plugins import Daemonizer
 
 @cherrypy.expose
 class Root(object):
@@ -47,5 +48,6 @@ if __name__ == '__main__':
     root = Root()
     root.ocr = Ocr()
     root.feedback = Feedback()
-
+    d = Daemonizer(cherrypy.engine)
+    d.subscribe()
     cherrypy.quickstart(root, '/', conf)
