@@ -257,6 +257,54 @@ module.exports = {
                     })
                 }
             })
-            .catch(err => reject(err));
+            .catch(err => {
+                reject({
+                    code: 500,
+                    err: 'serverError',
+                    case: 'db error',
+                    message: err.message
+                })
+            });
+    }),
+
+    updateReceipt: (newReceipt, userToken, feedbackToken) => new Promise((resolve, reject) => {
+
+        if(!feedbackToken || !ObjectID.isValid(feedbackToken)) {
+            return reject({
+               code: 400,
+               error: 'badRequest',
+               case: 'feedbackToken not exist or invalid'
+            });
+        }
+
+        newReceipt['feedbackToken'] = ObjectID(feedbackToken);
+
+        db.collection('users')
+            .findOneAndUpdate({
+                _id: ObjectID(userToken),
+                'receipts.feedbackToken': ObjectID(feedbackToken)
+            }, {
+                $set: {'receipts.$': newReceipt}
+            })
+            .then(res => {
+
+                if(res.value) resolve({
+                    code: 200,
+                    message: 'successfully updated'
+                });
+                else reject({
+                   code: 403,
+                   error: 'notExits',
+                   case: 'receipt not found'
+                })
+            })
+            .catch(err => {
+                reject({
+                    code: 500,
+                    err: 'serverError',
+                    case: 'db error',
+                    message: err.message
+                })
+            });
     })
 };

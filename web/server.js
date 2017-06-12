@@ -39,6 +39,10 @@ app.post('/api/receipt/feedback', (req, res) => {
     recognition.hasToken(req)
         .then(() => db.checkToken(req.query['userToken']))
         .then(() => recognition.feedback(req.body))
+        .then(receipt => db.updateReceipt(receipt,
+            req.query['userToken'],
+            req.query['feedbackToken'])
+        )
         .then(body => res.json(body))
         .catch(err => {
             res.status(err.code);

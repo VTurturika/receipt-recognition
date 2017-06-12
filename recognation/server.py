@@ -34,8 +34,6 @@ class Feedback(object):
     def POST(self):
 
         response = cherrypy.request.json
-        response['msg'] = 'from cherrypy.feedback'
-
         return response
 
 if __name__ == '__main__':
