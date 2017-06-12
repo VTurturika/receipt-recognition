@@ -4,7 +4,8 @@ import numpy as np
 import pyocr
 import re
 
-from datetime import date, datetime
+from datetime import datetime
+from pytz import timezone
 from pyocr.builders import TextBuilder
 from PIL import Image
 from keras.models import load_model
@@ -150,16 +151,15 @@ class OcrHandler:
             print('error catched')
             return self.categories[random.randint(1, 5)]
 
-    def prepare_response(self, items):
+    def prepare_response(sefl, items):
 
         response = dict({
             'feedbackToken': '',
-            'date': str(date.today()),
-            'time':  str(datetime.now())[12:16],
+            'date': str(datetime.now(timezone('Europe/Kiev')))[0:10],
+            'time':  str(datetime.now(timezone('Europe/Kiev')))[11:16],
             'total': sum([float(x['price']) for x in items if 'price' in x.keys() and x['price']]),
             'currency': 'UAH'
         })
-
         count_category = {items.count(x): x['category'] for x in items}
         response['commonCategory'] = count_category[max(count_category.keys())] \
             if len(items) > 0 else None
