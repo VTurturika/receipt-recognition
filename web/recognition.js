@@ -18,6 +18,18 @@ module.exports = {
         else resolve(true)
     }),
 
+    hasItems: (req) => new Promise((resolve,reject) => {
+
+        if(req.body.items && Array.isArray(req.body.items) && req.body.items.length > 0) {
+            resolve(true)
+        }
+        else reject({
+            code: 400,
+            error: 'badRequest',
+            case: 'items are required'
+        })
+    }),
+
     receivePhoto: (req) => new Promise((resolve, reject) => {
 
         console.log('receivePhoto start');
@@ -62,13 +74,19 @@ module.exports = {
 
     }),
 
-    ocr: (path) => new Promise((resolve,reject) => {
+    ocr: (params) => new Promise((resolve,reject) => {
+
+        let json = {
+            needOcr: !!(params && params.path),
+            file: params && params.path ? params.path : null,
+            items: params && params.items ? params.items: null
+        };
 
         console.log('ocr request send');
         request({
             method: 'POST',
             uri: 'http://localhost:8080/ocr',
-            json: {file: path}
+            json: json
         },
             (err, response, body) => {
 

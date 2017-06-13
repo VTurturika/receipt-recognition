@@ -19,9 +19,13 @@ class Ocr(object):
     def POST(self):
 
         handler = OcrHandler()
-        response = cherrypy.request.json
-        lines = handler.make_ocr(response['file'])
-        items = handler.parse(lines)
+        request = cherrypy.request.json
+
+        if request['needOcr']:
+            lines = handler.make_ocr(request['file'])
+            items = handler.parse(lines)
+        else:
+            items = request['items']
 
         return handler.prepare_response(items)
 

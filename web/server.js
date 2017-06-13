@@ -23,7 +23,7 @@ app.post('/api/receipt/ocr', (req, res) => {
     recognition.hasToken(req)
         .then(() => db.checkToken(req.query['userToken']))
         .then(() => recognition.receivePhoto(req))
-        .then(path => recognition.ocr(path))
+        .then(path => recognition.ocr({path: path}))
         .then(receipt => db.saveReceipt(receipt, req.query['userToken']))
         .then(receipt => res.json(receipt))
         .catch(err => {
@@ -53,11 +53,12 @@ app.post('/api/receipt/feedback', (req, res) => {
 app.post('/api/receipt/manual', (req, res) => {
 
     console.log('POST /api/receipt/manual');
-    console.log(req.body);
 
     recognition.hasToken(req)
+        .then(() => recognition.hasItems(req))
         .then(() => db.checkToken(req.query['userToken']))
-        .then(() => db.saveReceipt(req.body, req.query['userToken']))
+        .then(() => recognition.ocr({items: req.body.items}))
+        .then(receipt => db.saveReceipt(receipt, req.query['userToken']))
         .then(receipt => res.json(receipt))
         .catch(err => {
             res.status(err.code);
