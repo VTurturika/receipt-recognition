@@ -87,7 +87,6 @@ module.exports = {
                         err: 'unauthorized',
                         case: 'user not found'
                     });
-                console.log(JSON.stringify(user));
                 resolve(receipt);
             })
             .catch(err => reject({

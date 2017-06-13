@@ -50,6 +50,21 @@ app.post('/api/receipt/feedback', (req, res) => {
         });
 });
 
+app.post('/api/receipt/manual', (req, res) => {
+
+    console.log('POST /api/receipt/manual');
+    console.log(req.body);
+
+    recognition.hasToken(req)
+        .then(() => db.checkToken(req.query['userToken']))
+        .then(() => db.saveReceipt(req.body, req.query['userToken']))
+        .then(receipt => res.json(receipt))
+        .catch(err => {
+            res.status(err.code);
+            res.json(err)
+        });
+});
+
 app.post('/api/user/new', (req, res) => {
 
     console.log('POST /api/user/new');
