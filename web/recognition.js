@@ -20,7 +20,7 @@ module.exports = {
 
     hasItems: (req) => new Promise((resolve,reject) => {
 
-        if(req.body.items && Array.isArray(req.body.items) && req.body.items.length > 0) {
+        if(req.body.items) {
             resolve(true)
         }
         else reject({
@@ -28,6 +28,33 @@ module.exports = {
             error: 'badRequest',
             case: 'items are required'
         })
+    }),
+
+    checkItems: (req) => new Promise((resolve,reject) => {
+
+        let items = req.body.items;
+        const categories = {
+            'foods':1, 'electronics': 1,
+            'clothes':1, 'household':1, 'others':1
+        };
+
+        if(Array.isArray(req.body.items) &&
+           req.body.items.length > 0 &&
+           items.every(item =>
+               item.price !== undefined &&
+               item.category &&
+               categories[item.category] &&
+               item.name !== undefined
+           )
+        ) {
+            resolve(true);
+        }
+
+        else reject({
+            code: 400,
+            error: 'badRequest',
+            case: 'items are invalid'
+        });
     }),
 
     receivePhoto: (req) => new Promise((resolve, reject) => {

@@ -56,6 +56,7 @@ app.post('/api/receipt/manual', (req, res) => {
 
     recognition.hasToken(req)
         .then(() => recognition.hasItems(req))
+        .then(() => recognition.checkItems(req))
         .then(() => db.checkToken(req.query['userToken']))
         .then(() => recognition.ocr({items: req.body.items}))
         .then(receipt => db.saveReceipt(receipt, req.query['userToken']))
