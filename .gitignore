@@ -1,3 +1,4 @@
 .idea/
 web/node_modules/
 web/uploads/
+recognation/__pycache__/
