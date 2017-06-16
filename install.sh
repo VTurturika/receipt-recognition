@@ -1,5 +1,9 @@
 #!/bin/bash
 
+printf "Refreshing apt cache...\n\n"
+sudo apt update
+printf "\nOK\n\n"
+
 printf "Installing python3 and pip3...\n\n"
 sudo apt install -y python3 python3-pip
 printf "\nOK\n\n"
