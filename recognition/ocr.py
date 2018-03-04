@@ -13,7 +13,7 @@ from keras.models import load_model
 class OcrHandler:
 
     def __init__(self):
-        file = open('bi_grams', 'r')
+        file = open('bi_grams', 'r', encoding="utf-8")
         list = [x.strip('\n') for x in file.readlines()]
         self.bigrams = dict((bi, i) for i, bi in enumerate(list))
         self.ocr = pyocr.get_available_tools()[0]

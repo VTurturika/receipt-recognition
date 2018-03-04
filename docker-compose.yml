@@ -1,0 +1,51 @@
+version: "2"
+services:
+    web:
+        build: './docker/node'
+        volumes:
+            - ./web:/web
+        links:
+            - mongo
+        ports:
+            - '80:80'
+        restart: on-failure
+        environment:
+            - MONGO_ENDPOINT=10.10.0.3
+            - MONGO_DATABASE=diploma
+            - RECOGNITION_HOST=10.10.0.4
+            - RECOGNITION_PORT=8080
+        networks:
+            mynet:
+                ipv4_address: 10.10.0.2
+
+    mongo:
+        image: mongo:latest
+        restart: on-failure
+        environment:
+          - MONGO_DATA_DIR=/data/db
+          - MONGO_LOG_DIR=/dev/null
+        volumes:
+          - ./docker/mongo:/data/db
+        networks:
+            mynet:
+                ipv4_address: 10.10.0.3
+
+    recognition:
+        build:  './docker/recognition'
+        restart: on-failure
+        links:
+            - web
+        volumes:
+            - './web:/web'
+            - './recognition:/recognition'
+        networks:
+            mynet:
+                ipv4_address: 10.10.0.4
+
+networks:
+  mynet:
+    driver: bridge
+    ipam:
+     config:
+       - subnet: 10.10.0.0/16
+         gateway: 10.10.0.1

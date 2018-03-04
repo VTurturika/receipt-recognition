@@ -3,6 +3,9 @@
 const request = require('request');
 const formidable = require('formidable');
 const fs = require('fs');
+const endpoint = process.env.RECOGNITION_HOST || 'localhost';
+const port = process.env.RECOGNITION_PORT || 8080;
+const recognitionServer = `http://${endpoint}:${port}`;
 
 module.exports = {
 
@@ -112,7 +115,7 @@ module.exports = {
         console.log('ocr request send');
         request({
             method: 'POST',
-            uri: 'http://localhost:8080/ocr',
+            uri: `${recognitionServer}/ocr`,
             json: json
         },
             (err, response, body) => {
@@ -139,7 +142,7 @@ module.exports = {
         console.log('feedback request send');
         request({
             method: 'POST',
-            uri: 'http://localhost:8080/feedback',
+            uri: `${recognitionServer}/feedback`,
             json: json
         },
             (err, response, body) => {

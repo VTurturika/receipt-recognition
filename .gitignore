@@ -1,4 +1,10 @@
 .idea/
+
+docker/mongo/*
+!docker/mongo/.gitkeep
+
 web/node_modules/
-web/uploads/
-recognation/__pycache__/
+web/uploads/*
+!web/uploads/.gitkeep
+
+recognition/__pycache__/

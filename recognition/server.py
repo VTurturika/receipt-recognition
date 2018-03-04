@@ -50,6 +50,10 @@ if __name__ == '__main__':
     root = Root()
     root.ocr = Ocr()
     root.feedback = Feedback()
-    d = Daemonizer(cherrypy.engine)
-    d.subscribe()
+    # d = Daemonizer(cherrypy.engine)
+    # d.subscribe()
+    cherrypy.config.update({
+        'server.socket_host': '0.0.0.0',
+        'server.socket_port': 8080,
+    })
     cherrypy.quickstart(root, '/', conf)

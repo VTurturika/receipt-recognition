@@ -2,7 +2,10 @@
 
 const mongodb = require('mongodb').MongoClient;
 const ObjectID = require('mongodb').ObjectID;
-const url = 'mongodb://localhost:27017/diploma';
+const endpoint = process.env.MONGO_ENDPOINT || 'localhost';
+const port = process.env.MONGO_PORT || 27017;
+const database = process.env.MONGO_DATABASE || 'diploma';
+const url = `mongodb://${endpoint}:${port}/${database}`;
 let db;
 
 mongodb.connect(url)
