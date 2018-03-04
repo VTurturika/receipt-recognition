@@ -9,9 +9,11 @@ Self-hosted automated receipt recognition system (my university diploma project)
 * Friendly rest-api;
 * Only Open Source technologies;
 ## Installation
-1. ``git clone https://github.com/VTurturika/receipt-recognition.git && cd receipt-recognition``
-2. ``sudo ./install.sh``
-3. Enjoy!
+1. Install [docker](https://docs.docker.com/install/) and [docker-compose](https://docs.docker.com/compose/install/)
+2. ``git clone https://github.com/VTurturika/receipt-recognition.git && cd receipt-recognition``
+3. ``docker-compose build``
+4. ``docker-compose up -d``
+5. Enjoy!
 ## Used technologies
 * [Tensorflow](https://tensorflow.org)
 * [keras](https://keras.io)
